@@ -1,0 +1,7 @@
+help: Show network time daemon software
+run: echo version $(dpkg -l ntp  | awk 'END{print $3}')
+     if ps -C ntpd &>/dev/null ; then
+       echo NTP daemon is running
+     else
+       echo NTP daemon is not running
+     fi

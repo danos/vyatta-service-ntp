@@ -1,0 +1,8 @@
+help: Set system date and time with given NTP server
+allowed: local -a arr 
+         eval "arr=($(cli-shell-api listEffectiveNodes system ntp server))" 
+         echo -n "<hostname> <x.x.x.x>" ${arr[@]}
+run: ntpdate -u $4
+     if [ -w /dev/ipmi0 ]; then
+         ipmitool sel time set "`date +%m/%d/%Y\ %H:%M:%S`" > /dev/null
+     fi

@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+#----- Copyright & License -----
+#
+# Copyright (C) 2018-2019 AT&T Intellectual Property.
+# All Rights Reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+#----- Copyright & License -----
+
+use strict;
+use warnings;
+
+my ( $dev, $proto, $addr );
+
+sub usage {
+    print <<EOF;
+Usage: <device> <inet|inet6> <address>
+EOF
+    exit 1;
+}
+
+$dev   = shift;
+$proto = shift;
+$addr  = shift;
+
+usage() unless ( defined($dev) && defined($proto) && defined($addr) );
+
+system( "/opt/vyatta/sbin/vyatta_netplug_ntp.pl --dev=$dev --proto=$proto --addr=$addr --operation=del" );
+
+exit 0

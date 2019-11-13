@@ -1,0 +1,14 @@
+help: Show date and time of specified NTP server
+allowed: awk '/^server/{if ($2 ~ /^-/) print $3; else print $2}' /etc/ntp.conf
+run: 
+    PID=$(pidof ntpd | cut -d' ' -f1)
+    if [[ -z $PID ]]; then
+        echo NTP daemon is not running
+        exit 1
+    fi
+    vrfname=`strings /proc/$PID/environ | grep -oP "VRFName=\K\w[-\w]*"`
+    if [ -n "$vrfname" ]; then
+        chvrf $vrfname /usr/sbin/ntpdate -q $3
+    else
+        /usr/sbin/ntpdate -q $3
+    fi

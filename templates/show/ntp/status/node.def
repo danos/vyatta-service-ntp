@@ -1,0 +1,17 @@
+help: Show network time daemon status
+run:    PID=$(pidof ntpd | cut -d' ' -f1)
+        if [[ -z $PID ]]; then
+            echo NTP daemon is not running
+            exit
+        fi
+        vrfname=`strings /proc/$PID/environ | grep -oP "VRFName=\K\w[-\w]*"`
+        if [ -n "$vrfname" ]; then
+            chvrf="chvrf $vrfname"
+        else
+            chvrf=""
+        fi
+
+        $chvrf ntpq --wide -n -c sysinfo | awk '
+            $0 !~ /^(stabil|broad|symm)/{print}
+            $0 ~ /^associd=/ {if (/leap_alarm,/ || /sync_unspec,/) synch="not ";}
+            END {printf("\nSystem clock is %ssynchronized\n", synch);}'

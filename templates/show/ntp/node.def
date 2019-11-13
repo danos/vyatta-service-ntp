@@ -1,0 +1,25 @@
+help: Show peer status of network time daemon
+run: if ps -C ntpd &>/dev/null ; then
+	cat << EOF
+Codes:
+  + symmetric active
+  - symmetric passive
+  = server polled in client mode
+  ^ server broadcasting to this address
+  ~ peer sending broadcasts
+  * synchronizing to this server
+
+EOF
+    PID=$(pidof ntpd | cut -d' ' -f1)
+    if [[ -z $PID ]]; then
+            echo NTP daemon is not running
+            exit
+    fi
+    vrfname=`strings /proc/$PID/environ | grep -oP "VRFName=\K\w[-\w]*"`
+    if [ -n "$vrfname" ]; then
+        echo -e "NTP running on $vrfname routing instance.\n"
+        chvrf $vrfname ntpq --wide -n -c peers
+    else
+        ntpq --wide -n -c peers
+    fi
+fi

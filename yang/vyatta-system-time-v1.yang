@@ -1,0 +1,264 @@
+module vyatta-system-time-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-time:1";
+	prefix vyatta-system-time-v1;
+
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+	import vyatta-interfaces-v1 {
+		prefix if;
+	}
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		All rights reserved.
+
+		Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
+		All rights reserved.
+
+		Redistribution and use in source and binary forms, with or without
+		modification, are permitted provided that the following conditions
+		are met:
+
+		  1. Redistributions of source code must retain the above copyright
+		     notice, this list of conditions and the following disclaimer.
+		  2. Redistributions in binary form must reproduce the above
+		     copyright notice, this list of conditions and the following
+		     disclaimer in the documentation and/or other materials provided
+		     with the distribution.
+		  3. Neither the name of the copyright holder nor the names of its
+		     contributors may be used to endorse or promote products derived
+		     from this software without specific prior written permission.
+
+		THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		POSSIBILITY OF SUCH DAMAGE.
+
+		SPDX-License-Identifier: BSD-3-Clause
+
+		NTP configuration";
+
+	revision 2019-04-17 {
+		description "Add time-zone validation to only allow time-zones
+			defined by allowed";
+	}
+	revision 2018-12-18 {
+		description "Add support for NTP logconfig option";
+	}
+	revision 2018-01-05 {
+		description "Add source-interface leaf";
+	}
+	revision 2016-10-27 {
+		description "Deprecate the dynamic option for ntp.";
+	}
+	revision 2016-06-16 {
+		description "Use a grouping for ntp. Needed for vrf support.";
+	}
+	revision 2015-12-04 {
+		description "Add description to time-zone.";
+	}
+	revision 2015-08-14 {
+		description "Initial revision of version 1.";
+	}
+
+	typedef class {
+		description "The class of NTP messages to syslog";
+		type enumeration {
+			enum "all" {
+				configd:help "Syslog all classes of NTP messages";
+			}
+			enum "clock" {
+				configd:help "Syslog NTP clock messages";
+			}
+			enum "peer" {
+				configd:help "Syslog NTP peer messages";
+			}
+			enum "system" {
+				configd:help "Syslog NTP system messages";
+			}
+			enum "synchronization" {
+				configd:help "Syslog NTP synchronization messages";
+			}
+		}
+	}
+
+	typedef type {
+		description "The type of NTP messages to syslog";
+		type enumeration {
+			enum "all" {
+				configd:help "Syslog NTP messages of all types";
+			}
+			enum "info" {
+				configd:help "Syslog NTP informational messages";
+			}
+			enum "events" {
+				configd:help "Syslog NTP event messages";
+			}
+			enum "statistics" {
+				configd:help "Syslog NTP statistics messages";
+			}
+			enum "status" {
+				configd:help "Syslog NTP status messages";
+			}
+		}
+	}
+
+	grouping system-time-ntp {
+		container ntp {
+			presence "true";
+			configd:priority "300";
+			configd:help "Network Time Protocol (NTP) configuration";
+			configd:validate "/opt/vyatta/share/tmplscripts/system/ntp/configd_validate_ntpkeys";
+			configd:create "/opt/vyatta/sbin/vyatta_configure_ntp.pl --operation=start";
+			configd:delete "/opt/vyatta/sbin/vyatta_configure_ntp.pl --operation=stop";
+			configd:update "/opt/vyatta/sbin/vyatta_configure_ntp.pl --operation=restart";
+
+			leaf statistics {
+				type empty;
+				configd:help "Enable statistics collection";
+			}
+			list keyid {
+				configd:help "Network Time Protocol (NTP) authentication key";
+				key "tagnode";
+				leaf tagnode {
+					type uint16 {
+						range 1..65535;
+					}
+					configd:help "NTP authentication key ID";
+				}
+				leaf digest {
+					type enumeration {
+						enum md5;
+						enum sha1;
+					}
+					default md5;
+					configd:help "Digest Algorithm for authentication";
+				}
+				leaf plaintext-password {
+					type string {
+						length "1..20";
+						pattern '([^\s#])+';
+					}
+					mandatory true;
+					configd:secret "true";
+					configd:help "Plaintext password for authentication (max 20 characters)";
+				}
+			}
+			list server {
+				configd:help "Network Time Protocol (NTP) server";
+				key "tagnode";
+				leaf tagnode {
+					type string;
+					configd:help "Network Time Protocol (NTP) server";
+				}
+				leaf preempt {
+					type empty;
+					configd:help "Specifies the association as preemptable rather than the default persistent";
+				}
+				leaf dynamic {
+					status deprecated;
+					type empty;
+					configd:help "Allow server to be configured even if not reachable";
+				}
+				leaf noselect {
+					type empty;
+					configd:help "Marks the server as unused";
+				}
+				leaf prefer {
+					type empty;
+					configd:help "Marks the server as preferred";
+				}
+				leaf address-family {
+					type enumeration {
+						enum ipv4 {
+							configd:help "only IPv4 addresses";
+						}
+						enum ipv6 {
+							configd:help "only IPv6 addresses";
+						}
+					}
+					configd:help "Address family for hostname resolution";
+				}
+				leaf keyid {
+					type uint16 {
+						range 1..65535;
+					}
+					configd:help "NTP authentication key ID";
+				}
+			}
+			list syslog {
+				description "Syslog Network Time Protocol (NTP) messages";
+				configd:help "Syslog Network Time Protocol (NTP) messages";
+				key "class";
+				ordered-by "system";
+				must "not(class = 'all' and count(../syslog) > 1)" {
+					error-message "Cannot configure 'all' with other classes.";
+				}
+				must "not(type = 'all' and count(type) > 1)" {
+					error-message "Cannot configure 'all' with other types.";
+				}
+				leaf class {
+					description "The class of NTP messages to syslog";
+					configd:help "The class of NTP messages to syslog";
+					type class;
+				}
+				leaf-list type {
+					description "The type of NTP messages to syslog";
+					configd:help "The type of NTP messages to syslog";
+					type type;
+					min-elements 1;
+					ordered-by "system";
+				}
+			}
+			uses if:source-interface-leaf {
+				refine source-interface {
+					description
+						"The interface used to obtain the source IP address for
+						 packets sent to the NTP server.
+
+						 If the interface has multiple IP addresses one will be
+						 chosen by the system.
+
+						 If the interface does not exist or has no suitable IP
+						 addresses then the system will not attempt to connect
+						 to the server.";
+					configd:help "Use source address from interface for connecting to NTP server";
+				}
+			}
+		}
+	}
+
+	augment /system:system {
+		uses system-time-ntp;
+		leaf time-zone {
+			type string;
+			description "Local time zone as specified by Region/City";
+			configd:priority "100";
+			configd:help "Local time zone";
+			default "GMT";
+			configd:update "/opt/vyatta/share/tmplscripts/system/time-zone/configd_update.sh";
+			configd:allowed "/opt/vyatta/share/tmplscripts/system/time-zone/configd_allowed.sh";
+			configd:validate "/opt/vyatta/share/tmplscripts/system/time-zone/configd_validate.sh";
+			configd:end "/opt/vyatta/share/tmplscripts/system/time-zone/configd_end.sh";
+			configd:delete "/opt/vyatta/share/tmplscripts/system/time-zone/configd_delete1.cli";
+		}
+	}
+}

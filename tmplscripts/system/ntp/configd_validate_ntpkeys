@@ -1,0 +1,59 @@
+#! /usr/bin/perl
+
+#----- Copyright & License -----
+#
+# Copyright (C) 2017-2019 AT&T Intellectual Property.
+# All Rights Reserved.
+#
+# Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+#----- Copyright & License -----
+
+#
+# Validate NTP key configuration: ensure that keys assigned to servers
+# are defined.
+#
+
+use strict;
+use warnings;
+use Vyatta::Config;
+
+die "$0 expects no arguments\n" if (@ARGV);
+
+# for every key, add key id to list/hash/whatever
+# for every server, if key specified, check that key is in list
+
+my $cfg = Vyatta::Config->new();
+my $fips_configured =
+  (      $cfg->exists('system fips enable')
+      || $cfg->existsOrig('system fips enable') );
+$cfg->setLevel('system ntp');
+
+# hash of key IDs
+my %keyids = ();
+
+foreach my $id ( $cfg->listNodes('keyid') ) {
+    $keyids{$id} = 1;
+
+    my $dgst = uc $cfg->returnValue("keyid $id digest");
+    die "Key $id uses MD5 which is not allowed in FIPS mode."
+      if ( $dgst eq 'MD5' && $fips_configured );
+}
+
+my $failure = 0;
+foreach my $server ( $cfg->listNodes('server') ) {
+    my $server_keyid = $cfg->returnValue("server $server keyid");
+
+    next if ( !defined $server_keyid );
+
+    next if ( defined $keyids{$server_keyid} );
+
+    print "Server $server references undefined key id $server_keyid\n";
+    $failure = 1;
+}
+
+exit 1
+  if ($failure);

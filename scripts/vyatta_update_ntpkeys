@@ -1,0 +1,53 @@
+#! /usr/bin/perl
+
+#----- Copyright & License -----
+#
+# Copyright (C) 2017-2019 AT&T Intellectual Property.
+# All Rights Reserved.
+#
+# Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+#----- Copyright & License -----
+
+#
+# Generate contents of /etc/ntp.keys
+#
+
+use strict;
+use warnings;
+use lib "/opt/vyatta/share/perl5";
+use Getopt::Long;
+use Vyatta::Configd;
+use JSON;
+
+my ( $rtinstance, $path );
+
+GetOptions( "rtinstance=s" => \$rtinstance, );
+
+$rtinstance = 'default' unless defined $rtinstance;
+
+if ( $rtinstance eq 'default' ) {
+    $path = "system ntp keyid";
+} else {
+    $path = "routing routing-instance $rtinstance system ntp keyid";
+}
+
+my $cfg = Vyatta::Configd::Client->new();
+my $db  = $Vyatta::Configd::Client::AUTO;
+
+if ( $cfg->node_exists( $db, $path ) ) {
+    my $subtree = decode_json $cfg->tree_get_full( $db, $path );
+
+    my @keyids = @{ $subtree->{"keyid"} };
+    for my $keyid (@keyids) {
+        my $dgst = $keyid->{"digest"};
+        my $pass = $keyid->{"plaintext-password"};
+        my $name = $keyid->{"tagnode"};
+        printf "%2d $dgst %-20s  # $dgst key\n", $name, $pass;
+    }
+}
+
+exit 0;

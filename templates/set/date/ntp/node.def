@@ -1,0 +1,5 @@
+help: Set system date and time from Network Time Protocol (NTP) server
+run: ntpdate -u 0.vyatta.pool.ntp.org
+     if [ -w /dev/ipmi0 ]; then
+         ipmitool sel time set "`date +%m/%d/%Y\ %H:%M:%S`" > /dev/null
+     fi

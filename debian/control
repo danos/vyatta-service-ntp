@@ -1,0 +1,34 @@
+Source: vyatta-service-ntp
+Section: contrib/net
+Priority: extra
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends: config-package-dev,
+               debhelper (>= 9),
+               dh-systemd,
+               dh-yang
+Standards-Version: 3.9.8
+
+Package: vyatta-service-ntp
+Architecture: all
+Depends: vyatta-cfg (>= 1.16), libvyatta-interface-perl(>=1.26),
+ vyatta-system (>= 2.21.6), ntp (>= 1:4.2.7p22), ntpdate, netplug,
+ ${misc:Depends}, ${perl:Depends}
+Conflicts: vyatta-cfg-system (<< 2.5)
+Replaces: vyatta-cfg-system (<< 2.5)
+Description: Vyatta ntp integration
+ Provides scripts and configurations files necessary to
+ integrate ntpd with the Vyatta configuration system.
+
+Package: vyatta-system-time-v1-yang
+Architecture: all
+Depends: vyatta-service-ntp, ${misc:Depends}, ${yang:Depends}
+Description: vyatta-system-time-v1 module
+ NTP configuration
+
+Package: vyatta-system-time-routing-instance-v1-yang
+Architecture: all
+Depends: libvyatta-vrfmanager-sh, chvrf, ${misc:Depends}, ${yang:Depends}
+Conflicts: vyatta-cfg-system (<< 2.5)
+Replaces: vyatta-cfg-system (<< 2.5)
+Description: vyatta-system-time-routing-instance-v1 module
+ Routing Instance NTP configuration
