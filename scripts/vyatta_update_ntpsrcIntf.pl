@@ -22,7 +22,6 @@ use lib "/opt/vyatta/share/perl5";
 use File::Slurp;
 use Getopt::Long;
 use Vyatta::Configd;
-use Switch;
 use Fcntl;
 
 my ( $operation, $rtinstance, $proto, $path, $chvrf_str );
@@ -114,12 +113,7 @@ sub srcIntf_set() {
     }
 }
 
-switch ($operation) {
-    case 'get' {
-        srcIntf_get();
-    }
-    case 'set' {
-        srcIntf_set();
-    }
-}
+srcIntf_get() if ($operation eq 'get');
+srcIntf_set() if ($operation eq 'set');
+
 exit 0;
