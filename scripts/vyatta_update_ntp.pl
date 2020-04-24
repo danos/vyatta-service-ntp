@@ -20,7 +20,7 @@ use lib "/opt/vyatta/share/perl5";
 
 use Vyatta::Config;
 use Getopt::Long;
-use Vyatta::Address;
+use Vyatta::Misc qw(valid_ip_addr valid_ipv6_addr);
 
 my ($rtinstance);
 my %SyslogMsgClass = (
@@ -54,24 +54,29 @@ if ( $rtinstance eq 'default' ) {
 
 # address family strings
 my %afs   = ();
-my $proto = 'inet';
+my %proto = ();
 
 foreach my $server ( $cfg->listNodes("server") ) {
     my $af = $cfg->returnValue("server $server address-family");
     if ( defined($af) ) {
         if ( $af eq "ipv6" ) {
             $afs{$server} = "-6 ";
-            $proto = 'inet6';
+            $proto{'inet6'} = 1;
         } else {
             $afs{$server} = "-4 ";
-            $proto = 'inet';
+            $proto{'inet'} = 1;
         }
     } else {
         $afs{$server} = "";
-        if ( Vyatta::Address::is_ipv4($server) ) {
-            $proto = 'inet';
+        if ( valid_ip_addr($server) ) {
+            $proto{'inet'} = 1;
+        } elsif ( valid_ipv6_addr($server) ) {
+            $proto{'inet6'} = 1;
         } else {
-            $proto = 'inet6';
+
+            # Possibly a DNS name - enable both.
+            $proto{'inet'}  = 1;
+            $proto{'inet6'} = 1;
         }
     }
 
@@ -84,9 +89,14 @@ foreach my $server ( $cfg->listNodes("server") ) {
     print "\n";
 }
 
+my $proto_arg = "";
+if ( keys %proto ) {
+    $proto_arg = "--proto=" . join( ',', ( keys %proto ) );
+}
+
 # Source interface
 print
-`/opt/vyatta/sbin/vyatta_update_ntpsrcIntf.pl --rtinstance=$rtinstance --operation=set --proto=$proto`;
+`/opt/vyatta/sbin/vyatta_update_ntpsrcIntf.pl --rtinstance=$rtinstance --operation=set $proto_arg`;
 
 print "keys /run/ntp/vrf/$rtinstance/ntp.keys\n";
 my @keyids = $cfg->listNodes("keyid");

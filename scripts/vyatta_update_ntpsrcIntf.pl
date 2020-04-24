@@ -30,8 +30,13 @@ my ( $operation, $rtinstance, $proto, $path, $chvrf_str );
 GetOptions(
     "operation=s"  => \$operation,
     "rtinstance=s" => \$rtinstance,
-    "proto=s"      => \$proto,
+    "proto=s@"     => \$proto,
 );
+
+my %protoset;
+if ( $proto && scalar @$proto ) {
+    %protoset = map { $_ => 1 } split( /,/, join( ',', @$proto ) );
+}
 
 $rtinstance = 'default' unless defined $rtinstance;
 
@@ -74,7 +79,7 @@ sub get_src_addrs {
 
 sub srcIntf_get() {
     my $filename = "$ntp_path/$ntp_srcIntfFile";
-    my $row      = read_file( $filename );
+    my $row      = read_file($filename);
     print $row;
 }
 
@@ -85,19 +90,23 @@ sub srcIntf_set() {
     if ( $cfg->node_exists( $db, $path ) ) {
         my @intfcfg = $cfg->get("$path");
         my $srcIntf = $intfcfg[0];
+        my $has_addr;
         if ( defined($srcIntf) ) {
             my $filename = "$ntp_path/$ntp_srcIntfFile";
             sysopen( my $fh, $filename, O_RDWR | O_CREAT, 0600 )
               or die "$filename cannot be open. $!";
             print $fh "$srcIntf:$proto";
             my ( $src_ipaddr, $src_ip6addr ) = get_src_addrs($srcIntf);
-            if ( ( $proto eq 'inet' ) && defined($src_ipaddr) ) {
+
+            if ( ( $protoset{'inet'} ) && defined($src_ipaddr) ) {
                 print "interface listen $src_ipaddr\n";
-            } elsif ( ( $proto eq 'inet6' ) && defined($src_ip6addr) ) {
-                print "interface listen $src_ip6addr\n";
-            } else {
-                print "interface drop all\n";
+                $has_addr = 1;
             }
+            if ( ( $protoset{'inet6'} ) && defined($src_ip6addr) ) {
+                print "interface listen $src_ip6addr\n";
+                $has_addr = 1;
+            }
+            print "interface drop all\n" unless $has_addr;
             close($fh);
         }
     } else {
