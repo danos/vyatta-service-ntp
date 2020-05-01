@@ -1,3 +1,13 @@
+vyatta-service-ntp (0.20) unstable; urgency=medium
+
+  [ Nachiketa Prachanda ]
+  * fix config with ipv4 and ipv6 src interfaces
+  * remove switch module
+
+  [ Charles (Chas) Williams ]
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Fri, 01 May 2020 19:05:12 -0400
+
 vyatta-service-ntp (0.19) unstable; urgency=medium
 
   * DANOS Import Master
