@@ -79,6 +79,7 @@ sub get_src_addrs {
 sub srcIntf_get() {
     my $filename = "$ntp_path/$ntp_srcIntfFile";
     my $row      = read_file($filename);
+
     print $row;
 }
 
@@ -94,7 +95,7 @@ sub srcIntf_set() {
             my $filename = "$ntp_path/$ntp_srcIntfFile";
             sysopen( my $fh, $filename, O_RDWR | O_CREAT, 0600 )
               or die "$filename cannot be open. $!";
-            print $fh "$srcIntf:$proto";
+            print $fh "$srcIntf:" . join(',', @$proto);
             my ( $src_ipaddr, $src_ip6addr ) = get_src_addrs($srcIntf);
 
             if ( ( $protoset{'inet'} ) && defined($src_ipaddr) ) {
