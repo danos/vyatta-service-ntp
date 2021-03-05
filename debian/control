@@ -3,8 +3,7 @@ Section: contrib/net
 Priority: extra
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: config-package-dev,
-               debhelper (>= 9),
-               dh-systemd,
+               debhelper (>= 9.20160709),
                dh-yang
 Standards-Version: 3.9.8
 
